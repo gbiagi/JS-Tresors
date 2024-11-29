@@ -10,6 +10,14 @@ gameBoard = {"A": [0, 0, 0, 0, 0, 0, 0, 0],
     "F": [0, 0, 0, 0, 0, 0, 0, 0]
 }
 
+userBoard = {"A": [0, 0, 0, 0, 0, 0, 0, 0],
+    "B": [0, 0, 0, 0, 0, 0, 0, 0],
+    "C": [0, 0, 0, 0, 0, 0, 0, 0],
+    "D": [0, 0, 0, 0, 0, 0, 0, 0],
+    "E": [0, 0, 0, 0, 0, 0, 0, 0],
+    "F": [0, 0, 0, 0, 0, 0, 0, 0]
+}
+
 // Funció per escriure un objecte en un arxiu .json
 async function writeData(obj, file_path) {
     try {
@@ -47,34 +55,48 @@ function printBoard(board) {
     }
 }
 
+function checkMove(board, row, col) {
+    if(board[row][col] === 1) {
+        board[row][col] = "X"
+    }
+}
+
+function occupyBoard(board) {
+    // Randomly occupy the gameBoard
+    let counter = 0
+    const totalCells = Object.keys(board).length * board["A"].length
+    const maxOnes = 16
+
+    while (counter < maxOnes) {
+        let randomRow = String.fromCharCode(65 + Math.floor(Math.random() * Object.keys(board).length))
+        let randomCol = Math.floor(Math.random() * board[randomRow].length)
+        
+        if (board[randomRow][randomCol] === 0) {
+            board[randomRow][randomCol] = 1
+            counter++
+        }
+    }
+}
+
 async function main() {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
     })
 
-
-    
-    // Randomly occupy the gameBoard
-    let counter = 0
-    const totalCells = Object.keys(gameBoard).length * gameBoard["A"].length
-    const maxOnes = 16
-
-    while (counter < maxOnes) {
-        let randomRow = String.fromCharCode(65 + Math.floor(Math.random() * Object.keys(gameBoard).length))
-        let randomCol = Math.floor(Math.random() * gameBoard[randomRow].length)
-        
-        if (gameBoard[randomRow][randomCol] === 0) {
-            gameBoard[randomRow][randomCol] = 1
-            counter++
-        }
-    }
+    occupyBoard(gameBoard)
+    printBoard(gameBoard)
 
     //await writeData(person, path)
     //const json_data = await readData(path)
+    while(true){
+    const playerMove = await rl.question("Select Row&Col: ")
+    let row = playerMove[0]
+    let col = playerMove[1]
 
-    //const path = await rl.question("Nom de l'arxiu a generar? ")
-
+    checkMove(gameBoard)
+    printBoard(gameBoard)
+}
 
     rl.close() // Tancar la lectura 'readline'
 }
