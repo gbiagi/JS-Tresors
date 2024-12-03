@@ -1,8 +1,13 @@
 const fs = require('fs').promises
 const readline = require('readline').promises
 
-// Create matrix for the gameBoard
-gameBoard = {"A": [0, 0, 0, 0, 0, 0, 0, 0],
+var puntuacio = 0
+var tresors = 16
+var tirades = 1
+
+// Matriz donde se guardan las jugadas del usuario
+gameBoard = {
+    "A": [0, 0, 0, 0, 0, 0, 0, 0],
     "B": [0, 0, 0, 0, 0, 0, 0, 0],
     "C": [0, 0, 0, 0, 0, 0, 0, 0],
     "D": [0, 0, 0, 0, 0, 0, 0, 0],
@@ -10,7 +15,9 @@ gameBoard = {"A": [0, 0, 0, 0, 0, 0, 0, 0],
     "F": [0, 0, 0, 0, 0, 0, 0, 0]
 }
 
-userBoard = {"A": [0, 0, 0, 0, 0, 0, 0, 0],
+// Matriz donde se guardan los datos del juego
+userBoard = {
+    "A": [0, 0, 0, 0, 0, 0, 0, 0],
     "B": [0, 0, 0, 0, 0, 0, 0, 0],
     "C": [0, 0, 0, 0, 0, 0, 0, 0],
     "D": [0, 0, 0, 0, 0, 0, 0, 0],
@@ -19,9 +26,17 @@ userBoard = {"A": [0, 0, 0, 0, 0, 0, 0, 0],
 }
 
 // Funció per escriure un objecte en un arxiu .json
-async function writeData(obj, file_path) {
+async function writeData() {
+    let = file_path = 'savegames/game.json'
     try {
-        const txtData = JSON.stringify(obj, null, 2)
+        let txtData = {
+            puntuacio: puntuacio,
+            tresors: tresors,
+            tirades: tirades,
+            gameBoard: gameBoard,
+            userBoard: userBoard
+        };
+        txtData = JSON.stringify(txtData, null, 2)
         await fs.writeFile(file_path, txtData, 'utf-8')
         console.log(`Dades escrites a ${file_path}`)
     } catch (error) {
@@ -40,24 +55,61 @@ async function readData(file_path) {
     }
 }
 
-function printBoard(board) {
+function printBoard(showCheat = false) {
     // Print the gameBoard
     let firstRow = ""
-    for (let i = 0; i < 8;  i++){
+    for (let i = 0; i < 8; i++) {
         firstRow = firstRow + i + " "
     }
+    if (showCheat) {
+        firstRow = firstRow + '||   ' + firstRow
+    }
     console.log("  " + firstRow)
-    for (let key in board) {
+    for (let key in gameBoard) {
         // Print the row in the same line
-        let row = board[key]
+        let row = gameBoard[key]
         let rowStr = key + " " + row.join(' ')
+        if (showCheat) {
+            cheatRow = userBoard[key]
+            rowStr = rowStr + " || " + key + " " + cheatRow.join(' ')
+        }
         console.log(rowStr)
     }
 }
 
-function checkMove(board, row, col) {
-    if(board[row][col] === 1) {
-        board[row][col] = "X"
+function checkTreasure(row, col) {
+    // Comprovar on es el tresor mes proper
+    let minDistance = Infinity;
+    let nearestTreasure = null;
+
+    for (let r in userBoard) {
+        for (let c = 0; c < userBoard[r].length; c++) {
+            if (userBoard[r][c] === 1) {
+                let distance = Math.abs(r.charCodeAt(0) - row.charCodeAt(0)) + Math.abs(c - col);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestTreasure = { row: r, col: c };
+                }
+            }
+        }
+    }
+
+    if (nearestTreasure) {
+        console.log(`El tresor més proper està a la fila ${nearestTreasure.row} i columna ${nearestTreasure.col}`);
+    } else {
+        console.log("No s'ha trobat cap tresor.");
+    }
+}
+
+function checkMove(row, col) {
+    if (userBoard[row][col] === 1) {
+        gameBoard[row][col] = "X"
+        puntuacio++
+        tresors--
+    } else {
+        gameBoard[row][col] = "-"
+        checkTreasure(row, col)
+        tirades++
     }
 }
 
@@ -65,40 +117,71 @@ function occupyBoard(board) {
     // Randomly occupy the gameBoard
     let counter = 0
     const totalCells = Object.keys(board).length * board["A"].length
-    const maxOnes = 16
+    const maxOnes = tresors
 
     while (counter < maxOnes) {
         let randomRow = String.fromCharCode(65 + Math.floor(Math.random() * Object.keys(board).length))
         let randomCol = Math.floor(Math.random() * board[randomRow].length)
-        
+
         if (board[randomRow][randomCol] === 0) {
             board[randomRow][randomCol] = 1
             counter++
         }
     }
+
+
 }
 
 async function main() {
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    })
 
-    occupyBoard(gameBoard)
-    printBoard(gameBoard)
+    var showCheat = false
+    occupyBoard(userBoard)
 
-    //await writeData(person, path)
-    //const json_data = await readData(path)
-    while(true){
-    const playerMove = await rl.question("Select Row&Col: ")
-    let row = playerMove[0]
-    let col = playerMove[1]
+    while (true) {
+        if (tirades > 32) {
+            console.log("Has perdut")
+            return
+        }
+        printBoard(showCheat)
 
-    checkMove(gameBoard)
-    printBoard(gameBoard)
-}
-
-    rl.close() // Tancar la lectura 'readline'
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        })
+        switch (await rl.question("Escriu una comanda: ")) {
+            case 'trampa':
+                showCheat = !showCheat
+                break
+            case 'dt':
+                let playerMove = await rl.question("Seleciona la fila i la columna: ")
+                let row = playerMove[0].toUpperCase()
+                let col = playerMove[1]
+                checkMove(row, col)
+                break
+            case 'puntuacio':
+                console.log('Puntuacio: ' + puntuacio + '/16')
+                console.log('Tirades: ' + tirades + '/32')
+                break
+            case 'guardar':
+                await writeData()
+                break
+            case 'carregar':
+                let data = await readData('savegames/game.json')
+                puntuacio = data.puntuacio
+                tresors = data.tresors
+                tirades = data.tirades
+                gameBoard = data.gameBoard
+                userBoard = data.userBoard
+                console.log('Dades carregades')
+                break
+            case 'ajuda':
+                console.log("Comandes disponibles: trampa, destapar, puntuacio, guardar, carregar, ajuda, sortir")
+                break
+            case 'sortir':
+                return
+        }
+        rl.close() // Tancar la lectura 'readline'
+    }
 }
 
 main()
