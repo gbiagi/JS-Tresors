@@ -152,6 +152,7 @@ async function main() {
             case 'trampa':
                 showCheat = !showCheat
                 break
+            case 'dt':
             case 'destapar':
                 let playerMove = await rl.question("Seleciona la fila i la columna: ")
                 let row = playerMove[0].toUpperCase()
@@ -178,6 +179,8 @@ async function main() {
                 console.log("Comandes disponibles: trampa, destapar, puntuacio, guardar, carregar, ajuda, sortir")
                 break
             case 'sortir':
+                // finish execution
+                rl.close()
                 return
         }
         rl.close() // Tancar la lectura 'readline'
