@@ -152,7 +152,7 @@ async function main() {
             case 'trampa':
                 showCheat = !showCheat
                 break
-            case 'dt':
+            case 'destapar':
                 let playerMove = await rl.question("Seleciona la fila i la columna: ")
                 let row = playerMove[0].toUpperCase()
                 let col = playerMove[1]
